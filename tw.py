@@ -11,7 +11,8 @@ import jinja2
 @click.argument('output_path', type=click.Path(exists=True, writable=True), default=lambda: os.getcwd())
 @click.option('--output_filename', help='Jinja2 template string to generate filenames')
 @click.option('--delimiter', default=',')
-def cli(input_file, output_path, template_file, output_filename, delimiter):
+@click.option('--prompt', default=False, is_flag=True)
+def cli(input_file, output_path, template_file, output_filename, delimiter, prompt):
     template_extension = os.path.splitext(template_file.name)[-1]
     template = jinja2.Template(template_file.read())
     click.echo('Opening file %s for parsing' % input_file.name)
@@ -22,10 +23,13 @@ def cli(input_file, output_path, template_file, output_filename, delimiter):
             filename = str(row.Index) + template_extension
         else:
             filename = jinja2.Environment().from_string(output_filename).render(**values)
-        click.echo('Writing to %s' % os.path.join(output_path, filename))
+        click.echo('About to write file %s' % os.path.join(output_path, filename))
+        if prompt:
+            click.confirm('Continue?', abort=True, default=True)
         with open(os.path.join(output_path, filename), mode='w') as output_file:
             output_file.write(template.render(**values))
             output_file.flush()
+        
 
 
 if __name__ == '__main__':
